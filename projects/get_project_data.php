@@ -33,18 +33,18 @@ foreach($checklists as $c) {
     if (!isset($activities[$name])) {
         $activities[$name] = [
             'activity_name' => $name,
+            'week1' => false,
             'week2' => false,
             'week3' => false,
             'week4' => false,
             'week5' => false,
-            'week6' => false,
         ];
     }
+    if ($c['week_number'] == 1) $activities[$name]['week1'] = (bool)$c['is_completed'];
     if ($c['week_number'] == 2) $activities[$name]['week2'] = (bool)$c['is_completed'];
     if ($c['week_number'] == 3) $activities[$name]['week3'] = (bool)$c['is_completed'];
     if ($c['week_number'] == 4) $activities[$name]['week4'] = (bool)$c['is_completed'];
     if ($c['week_number'] == 5) $activities[$name]['week5'] = (bool)$c['is_completed'];
-    if ($c['week_number'] == 6) $activities[$name]['week6'] = (bool)$c['is_completed'];
 }
 
 $project['activities'] = array_values($activities);

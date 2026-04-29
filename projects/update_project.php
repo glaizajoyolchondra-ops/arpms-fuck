@@ -83,8 +83,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_id'])) {
                 
                 $weeks = $_POST['activity_weeks'][$index] ?? [];
                 
-                // We need to insert rows for weeks 2 to 6
-                for ($w = 2; $w <= 6; $w++) {
+                // We need to insert rows for weeks 1 to 5
+                for ($w = 1; $w <= 5; $w++) {
                     $is_completed = in_array($w, $weeks) ? 1 : 0;
                     $stmt->execute([$project_id, $w, $name, $is_completed]);
                 }

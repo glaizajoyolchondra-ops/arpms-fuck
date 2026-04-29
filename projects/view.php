@@ -132,11 +132,11 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                             <thead>
                                 <tr>
                                     <th>Activity</th>
+                                    <th>Week 1</th>
                                     <th>Week 2</th>
                                     <th>Week 3</th>
                                     <th>Week 4</th>
                                     <th>Week 5</th>
-                                    <th>Week 6</th>
                                 </tr>
                             </thead>
                             <tbody>
@@ -150,7 +150,7 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                                 ?>
                                 <tr>
                                     <td><?php echo htmlspecialchars($name); ?></td>
-                                    <?php for($i=2; $i<=6; $i++): ?>
+                                    <?php for($i=1; $i<=5; $i++): ?>
                                         <td>
                                             <?php if(isset($weeks[$i])): ?>
                                                 <input type="checkbox" class="checkbox-custom" 

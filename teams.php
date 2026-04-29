@@ -9,27 +9,11 @@ require_once 'config/database.php';
 $user_id = $_SESSION['user_id'];
 $role = $_SESSION['role'];
 
-// Fetch all users the current user can chat with (members of the same project teams)
-$query = "SELECT DISTINCT u.user_id, u.full_name, u.role, u.status 
-          FROM users u 
-          JOIN project_team pt1 ON u.user_id = pt1.user_id
-          JOIN project_team pt2 ON pt1.project_id = pt2.project_id
-          WHERE pt2.user_id = ? AND u.user_id != ?
-          UNION
-          SELECT DISTINCT u.user_id, u.full_name, u.role, u.status
-          FROM users u
-          JOIN research_projects p ON u.user_id = p.coordinator_id
-          JOIN project_team pt ON p.project_id = pt.project_id
-          WHERE pt.user_id = ? AND u.user_id != ?
-          UNION
-          SELECT DISTINCT u.user_id, u.full_name, u.role, u.status
-          FROM users u
-          JOIN project_team pt ON u.user_id = pt.user_id
-          JOIN research_projects p ON pt.project_id = p.project_id
-          WHERE p.coordinator_id = ? AND u.user_id != ?";
+// Fetch all users the current user can chat with
+$query = "SELECT user_id, full_name, role, status FROM users WHERE user_id != ?";
 
 $stmt = $pdo->prepare($query);
-$stmt->execute([$user_id, $user_id, $user_id, $user_id, $user_id, $user_id]);
+$stmt->execute([$user_id]);
 $contacts = $stmt->fetchAll();
 
 // Default contact if none selected

@@ -167,11 +167,11 @@ $coordinators = $pdo->query("SELECT user_id, full_name FROM users WHERE role='co
                         <thead>
                             <tr>
                                 <th style="text-align: left;">Activity</th>
+                                <th>Week 1</th>
                                 <th>Week 2</th>
                                 <th>Week 3</th>
                                 <th>Week 4</th>
                                 <th>Week 5</th>
-                                <th>Week 6</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -295,11 +295,11 @@ function openEditModal(projectId) {
                 const row = document.createElement('tr');
                 row.innerHTML = `
                     <td><input type="text" name="activity_names[${index}]" value="${a.activity_name}" class="input-premium"></td>
+                    <td><input type="checkbox" name="activity_weeks[${index}][]" value="1" class="checkbox-custom" ${a.week1 ? 'checked' : ''}></td>
                     <td><input type="checkbox" name="activity_weeks[${index}][]" value="2" class="checkbox-custom" ${a.week2 ? 'checked' : ''}></td>
                     <td><input type="checkbox" name="activity_weeks[${index}][]" value="3" class="checkbox-custom" ${a.week3 ? 'checked' : ''}></td>
                     <td><input type="checkbox" name="activity_weeks[${index}][]" value="4" class="checkbox-custom" ${a.week4 ? 'checked' : ''}></td>
                     <td><input type="checkbox" name="activity_weeks[${index}][]" value="5" class="checkbox-custom" ${a.week5 ? 'checked' : ''}></td>
-                    <td><input type="checkbox" name="activity_weeks[${index}][]" value="6" class="checkbox-custom" ${a.week6 ? 'checked' : ''}></td>
                 `;
                 tbody.appendChild(row);
             });
@@ -411,11 +411,11 @@ function addActivityRow() {
     const row = document.createElement('tr');
     row.innerHTML = `
         <td><input type="text" name="activity_names[${index}]" class="input-premium" placeholder="Enter activity"></td>
+        <td><input type="checkbox" name="activity_weeks[${index}][]" value="1" class="checkbox-custom"></td>
         <td><input type="checkbox" name="activity_weeks[${index}][]" value="2" class="checkbox-custom"></td>
         <td><input type="checkbox" name="activity_weeks[${index}][]" value="3" class="checkbox-custom"></td>
         <td><input type="checkbox" name="activity_weeks[${index}][]" value="4" class="checkbox-custom"></td>
         <td><input type="checkbox" name="activity_weeks[${index}][]" value="5" class="checkbox-custom"></td>
-        <td><input type="checkbox" name="activity_weeks[${index}][]" value="6" class="checkbox-custom"></td>
     `;
     tbody.appendChild(row);
 }
