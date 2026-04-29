@@ -46,11 +46,13 @@ if ($selected_contact_id) {
             display: flex;
             flex-direction: column;
             background: #F9FAFB;
+            min-height: 0;
         }
         .chat-main {
             display: flex;
             flex-direction: column;
             background: white;
+            min-height: 0;
         }
         .contact-item {
             padding: 16px 24px;
@@ -83,6 +85,7 @@ if ($selected_contact_id) {
             flex-direction: column;
             gap: 16px;
             background: #F3F4F6;
+            min-height: 0;
         }
         .message-bubble {
             max-width: 70%;
@@ -148,7 +151,7 @@ if ($selected_contact_id) {
                 </div>
             </div>
 
-            <div style="overflow-y: auto; flex: 1;">
+            <div style="overflow-y: auto; flex: 1; min-height: 0;">
                 <?php foreach($contacts as $contact): ?>
                     <div class="contact-item <?php echo $selected_contact_id == $contact['user_id'] ? 'active' : ''; ?>" onclick="location.href='?user_id=<?php echo $contact['user_id']; ?>'">
                         <div class="user-avatar-blue" style="width: 44px; height: 44px; font-size: 18px; flex-shrink: 0;">
@@ -240,7 +243,12 @@ if ($selected_contact_id) {
                         const isSent = msg.sender_id == currentUserId;
                         div.className = `message-bubble ${isSent ? 'message-sent' : 'message-received'}`;
                         const time = new Date(msg.created_at).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
-                        div.innerHTML = msg.content + `<div style="font-size: 10px; color: ${isSent ? 'rgba(255,255,255,0.7)' : '#9CA3AF'}; margin-top: 4px; text-align: right;">${time}</div>`;
+                        
+                        div.innerHTML = msg.content + 
+                            `<div style="display: flex; justify-content: space-between; align-items: center; gap: 10px; margin-top: 4px; font-size: 10px; color: ${isSent ? 'rgba(255,255,255,0.7)' : '#9CA3AF'};">
+                                <span></span>
+                                <span>${time}</span>
+                            </div>`;
                         chatMessages.appendChild(div);
                     });
                     chatMessages.scrollTop = chatMessages.scrollHeight;

@@ -127,7 +127,7 @@ $unread_count = count(array_filter($notifications, function($n) { return !$n['is
                 <i class="fa-solid fa-users-gear" style="width: 20px;"></i> Manage Users
             </a>
             <?php endif; ?>
-            <?php if($role === 'admin' || $role === 'coordinator'): ?>
+            <?php if($role === 'admin' || $role === 'coordinator' || $role === 'researcher'): ?>
             <?php $projects_path = (strpos($_SERVER['PHP_SELF'], 'projects/') !== false || strpos($_SERVER['PHP_SELF'], 'users/') !== false) ? '../projects/index.php' : 'projects/index.php'; ?>
             <a href="<?php echo $projects_path; ?>" class="dropdown-item-premium">
                 <i class="fa-regular fa-folder" style="width: 20px;"></i> Projects

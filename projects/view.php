@@ -44,7 +44,7 @@ if ($_SESSION['role'] === 'researcher') {
 }
 
 // Fetch Team
-$team_stmt = $pdo->prepare("SELECT u.full_name, u.role, u.email FROM users u JOIN project_team pt ON u.user_id = pt.user_id WHERE pt.project_id = ?");
+$team_stmt = $pdo->prepare("SELECT u.user_id, u.full_name, u.role, u.email FROM users u JOIN project_team pt ON u.user_id = pt.user_id WHERE pt.project_id = ?");
 $team_stmt->execute([$project_id]);
 $team = $team_stmt->fetchAll();
 
@@ -245,7 +245,7 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                 <div class="view-card">
                     <h3>Quick Actions</h3>
                     <button class="quick-action-btn" onclick="openModal('downloadDocumentsModal')">Download Documents</button>
-                    <button class="quick-action-btn" onclick="openModal('contactTeamModal')">Contact Team</button>
+                    <button class="quick-action-btn" onclick="openContactModal()">Contact Team</button>
                     <button class="quick-action-btn" onclick="openModal('scheduleMeetingModal')">Schedule Meeting</button>
                 </div>
             </div>
@@ -290,7 +290,7 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                 <h2 style="font-size: 18px; font-weight: 700; display: flex; align-items: center; gap: 8px;">
                     <i class="fa-regular fa-calendar" style="color: #6B7280;"></i> Contact Team – <?php echo htmlspecialchars($p['title']); ?>
                 </h2>
-                <button onclick="closeModal('contactTeamModal')" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6B7280;">&times;</button>
+                <button onclick="closeContactModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #6B7280;">&times;</button>
             </div>
             
             <div style="display: grid; grid-template-columns: 300px 1fr; gap: 24px;">
@@ -308,7 +308,7 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                     <div style="display: flex; flex-direction: column; gap: 12px; max-height: 250px; overflow-y: auto; margin-bottom: 16px;">
                         <?php foreach($team as $m): ?>
                         <label style="display: flex; align-items: center; gap: 12px; padding: 12px; border: 1px solid #E5E7EB; border-radius: 8px; cursor: pointer; background: white;" class="contact-attendee-item">
-                            <input type="checkbox" name="contact_attendees[]" value="<?php echo htmlspecialchars($m['email']); ?>" style="width: 16px; height: 16px; border-radius: 4px; border: 1px solid #D1D5DB; display: none;">
+                            <input type="checkbox" name="contact_attendees[]" value="<?php echo $m['user_id']; ?>" style="width: 16px; height: 16px; border-radius: 4px; border: 1px solid #D1D5DB; display: none;">
                             <div style="width: 24px; height: 24px; border-radius: 50%; background: #111827; color: white; display: flex; align-items: center; justify-content: center; font-size: 12px;">
                                 <i class="fa-solid fa-user"></i>
                             </div>
@@ -326,8 +326,8 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                 
                 <!-- Right: Chat Area -->
                 <div style="border: 1px solid #E5E7EB; border-radius: 8px; padding: 16px; display: flex; flex-direction: column; background: white;">
-                    <div style="flex: 1; background: #F3F4F6; border-radius: 8px; margin-bottom: 16px; border: 1px solid #E5E7EB;">
-                        <!-- Chat history would go here -->
+                    <div id="contactChatArea" style="height: 400px; overflow-y: auto; background: #F3F4F6; border-radius: 8px; margin-bottom: 16px; border: 1px solid #E5E7EB; display: flex; flex-direction: column; padding: 16px;">
+                        <!-- Chat history will be loaded here -->
                     </div>
                     <div style="display: flex; gap: 12px; align-items: center;">
                         <input type="text" class="input-premium" style="flex: 1; height: 48px; border-radius: 24px; padding: 0 20px;" placeholder="Type your message...">
@@ -617,14 +617,78 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                 });
             }
 
-            // Chat Mock Logic
+            // Chat Logic
             const chatInput = contactModal.querySelector('input[placeholder="Type your message..."]');
             const sendBtn = contactModal.querySelector('.fa-paper-plane').parentElement;
-            const chatArea = contactModal.querySelector('div[style*="background: #F3F4F6"]');
+            const chatArea = document.getElementById('contactChatArea');
+            const currentUserId = <?php echo $_SESSION['user_id']; ?>;
+            const projectId = <?php echo $project_id; ?>;
+            const teamCount = <?php echo count($team); ?>;
+            let chatPoll = null;
+
+            function loadMessages() {
+                fetch(`../includes/get_messages.php?project_id=${projectId}`)
+                    .then(res => res.json())
+                    .then(data => {
+                        if (!chatArea.style.display || chatArea.style.display === 'block') {
+                            chatArea.style.display = 'flex';
+                            chatArea.style.flexDirection = 'column';
+                            chatArea.style.padding = '16px';
+                            chatArea.style.overflowY = 'auto';
+                        }
+                        
+                        // Only update if data changed or first load
+                        const currentContent = chatArea.innerHTML;
+                        let newContent = '';
+                        data.forEach(msg => {
+                            const isSent = msg.sender_id == currentUserId;
+                            let seenLabel = '';
+                            if (isSent && msg.seen_info) {
+                                const seenBy = msg.seen_info.filter(i => i.is_read).map(i => i.full_name);
+                                const recipients = msg.seen_info.map(i => i.full_name);
+                                const totalRecipients = msg.seen_info.length;
+                                
+                                if (seenBy.length > 0) {
+                                    if (seenBy.length === totalRecipients) {
+                                        if (totalRecipients === teamCount) {
+                                            seenLabel = 'seen by everyone';
+                                        } else {
+                                            seenLabel = `seen by ${recipients.join(', ')} only`;
+                                        }
+                                    } else {
+                                        seenLabel = `seen by ${seenBy.join(', ')}`;
+                                    }
+                                }
+                            }
+
+                            newContent += `<div style="background: ${isSent ? '#2D5BFF' : '#E5E7EB'}; color: ${isSent ? 'white' : '#111827'}; padding: 12px 16px; border-radius: 16px; border-bottom-${isSent ? 'right' : 'left'}-radius: 4px; align-self: ${isSent ? 'flex-end' : 'flex-start'}; max-width: 80%; margin-bottom: 12px; font-size: 14px; ${isSent ? 'margin-left: auto' : 'margin-right: auto'};">
+                                <div>${msg.content}</div>
+                                <div style="font-size: 10px; margin-top: 4px; opacity: 0.8; text-align: right;">${seenLabel}</div>
+                            </div>`;
+                        });
+                        
+                        if (currentContent !== newContent) {
+                            chatArea.innerHTML = newContent;
+                            chatArea.scrollTop = chatArea.scrollHeight;
+                        }
+                    });
+            }
+
+            window.openContactModal = function() {
+                contactModal.style.display = 'flex';
+                loadMessages();
+                if (chatPoll) clearInterval(chatPoll);
+                chatPoll = setInterval(loadMessages, 5000);
+            }
+
+            window.closeContactModal = function() {
+                contactModal.style.display = 'none';
+                if (chatPoll) clearInterval(chatPoll);
+            }
 
             function sendMessage() {
                 const msg = chatInput.value.trim();
-                const selected = Array.from(contactModal.querySelectorAll('input[type="checkbox"]:checked'));
+                const selected = Array.from(contactModal.querySelectorAll('input[type="checkbox"]:checked')).map(cb => cb.value);
                 
                 if (selected.length === 0) {
                     alert('Please select at least one team member to contact.');
@@ -632,29 +696,24 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                 }
                 if (!msg) return;
 
-                const msgDiv = document.createElement('div');
-                msgDiv.style.background = '#2D5BFF';
-                msgDiv.style.color = 'white';
-                msgDiv.style.padding = '12px 16px';
-                msgDiv.style.borderRadius = '16px';
-                msgDiv.style.borderBottomRightRadius = '4px';
-                msgDiv.style.alignSelf = 'flex-end';
-                msgDiv.style.maxWidth = '80%';
-                msgDiv.style.marginBottom = '12px';
-                msgDiv.style.fontSize = '14px';
-                msgDiv.style.marginLeft = 'auto'; // push to right
-                msgDiv.textContent = msg;
+                const formData = new FormData();
+                selected.forEach(id => formData.append('receiver_ids[]', id));
+                formData.append('content', msg);
+                formData.append('project_id', projectId);
 
-                if (!chatArea.style.display || chatArea.style.display === 'block') {
-                    chatArea.style.display = 'flex';
-                    chatArea.style.flexDirection = 'column';
-                    chatArea.style.padding = '16px';
-                    chatArea.style.overflowY = 'auto';
-                }
-
-                chatArea.appendChild(msgDiv);
-                chatArea.scrollTop = chatArea.scrollHeight;
-                chatInput.value = '';
+                fetch('../includes/send_message.php', {
+                    method: 'POST',
+                    body: formData
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        chatInput.value = '';
+                        loadMessages();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                });
             }
 
             if (sendBtn && chatInput) {
@@ -663,6 +722,14 @@ $progress_pct = $total_acts > 0 ? round(($completed_acts / $total_acts) * 100) :
                     if (e.key === 'Enter') sendMessage();
                 });
             }
+        }
+
+        // Handle direct links from notifications
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.get('action') === 'contact') {
+            setTimeout(() => {
+                if (typeof openContactModal === 'function') openContactModal();
+            }, 500);
         }
     });
     </script>
