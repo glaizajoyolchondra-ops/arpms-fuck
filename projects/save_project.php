@@ -3,6 +3,19 @@ session_start();
 require_once '../config/database.php';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_SESSION['user_id'])) {
+    // Defensive check: If POST is empty but method is POST, it likely hit a limit
+    if (empty($_POST)) {
+        die("Error: No data received. This may be due to the file upload size exceeding the server's post_max_size limit.");
+    }
+
+    // Required fields validation
+    $required_fields = ['title', 'description', 'department_id', 'budget', 'start_date', 'end_date'];
+    foreach ($required_fields as $field) {
+        if (!isset($_POST[$field]) || (is_string($_POST[$field]) && trim($_POST[$field]) === '')) {
+            die("Error: Missing or empty required field - " . $field);
+        }
+    }
+
     $title = $_POST['title'];
     $description = $_POST['description'];
     $department_id = intval($_POST['department_id']);
